@@ -1,8 +1,11 @@
-# jp_visualization
-時事ネタをe-statとstreamlitで可視化
+# imin
+外国人人口をe-statとstreamlitで可視化
 
 ## 仮想環境構築(venv)
 ```
+# ディレクトリを移動
+cd imin
+
 # 仮想環境作成
 python3 -m venv .venv
 
