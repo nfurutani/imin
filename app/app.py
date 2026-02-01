@@ -169,3 +169,4 @@ st.markdown(f"""
 # フッター
 st.markdown('---')
 st.markdown('Source: [総務省 住民基本台帳に基づく人口](https://www.soumu.go.jp/main_sosiki/jichi_gyousei/daityo/jinkou_jinkoudoutai-setaisuu.html)')
+st.markdown('Data: 2025年1月')
