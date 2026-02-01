@@ -150,7 +150,7 @@ df_styled = df_display[display_cols].reset_index(drop=True)
 styled = df_styled.style.format({
     '総人口': '{:,.0f}',
     '外国人': '{:,.0f}',
-    '割合': '{:.2f}'
+    '割合': '{:.1f}'
 }).background_gradient(
     subset=['総人口', '外国人', '割合'],
     cmap='Purples'
