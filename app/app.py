@@ -118,9 +118,9 @@ DATA_DIR = BASE_DIR / 'data'
 
 df = pd.read_csv(DATA_DIR / 'streamlit.csv')
 df = df.rename(columns={'外国人人口':'外国人'})
-df['割合'] = round(df['外国人'] / df['総人口'] * 100, 1)
+df['比率'] = round(df['外国人'] / df['総人口'] * 100, 1)
 
-st.title('外国人人口割合')
+st.title('外国人比率')
 
 # 都道府県の選択
 pref_list = df[df['level'] == 'pref']['都道府県'].tolist()
@@ -143,14 +143,14 @@ else:
     df_display = df_display.sort_values('割合', ascending=False)
 
 # 表示カラムを選択
-display_cols = ['都道府県', '市区町村', '総人口', '外国人', '割合']
+display_cols = ['都道府県', '市区町村', '総人口', '外国人', '比率']
 df_styled = df_display[display_cols].reset_index(drop=True)
 
 # ヒートマップスタイルを適用
 styled = df_styled.style.format({
     '総人口': '{:,.0f}',
     '外国人': '{:,.0f}',
-    '割合': '{:.1f}'
+    '比率': '{:.1f}'
 }).background_gradient(
     subset=['総人口', '外国人', '割合'],
     cmap='Purples'
