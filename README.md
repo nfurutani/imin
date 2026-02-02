@@ -1,7 +1,6 @@
 # imin
 政府統計(外国人人口)をe-statとstreamlitでwebappを開発しています。
 url: https://audio-demo-aessqzj9nw3cdrfsjvjmn8.streamlit.app/
-なんでもご意見いただけると励みになります。
 
 
 ## 仮想環境構築(venv)
