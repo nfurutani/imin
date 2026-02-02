@@ -1,5 +1,5 @@
 # imin
-政府統計(外国人人口)をe-statとstreamlitでwebappを開発しています。
+政府統計(外国人人口)をe-statとstreamlitでwebappを開発しています。  
 url: https://audio-demo-aessqzj9nw3cdrfsjvjmn8.streamlit.app/
 
 
