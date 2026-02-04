@@ -138,12 +138,14 @@ def render_pref(df, data_dir):
     col1, col2 = st.columns(2)
     with col1:
         selected_region_filter = st.selectbox('地域', region_list, label_visibility='collapsed', key='tab_pref_region')
+
+    if selected_region_filter == '全地域':
+        df_filtered = df_zairyu_pref
+    else:
+        df_filtered = df_zairyu_pref[df_zairyu_pref['地域'] == selected_region_filter]
+    country_list = ['全国籍'] + sorted(df_filtered['国籍'].unique().tolist())
+
     with col2:
-        if selected_region_filter == '全地域':
-            df_filtered = df_zairyu_pref
-        else:
-            df_filtered = df_zairyu_pref[df_zairyu_pref['地域'] == selected_region_filter]
-        country_list = ['全国籍'] + sorted(df_filtered['国籍'].unique().tolist())
         selected_country = st.selectbox('国籍', country_list, label_visibility='collapsed', key='tab_pref_country')
 
     if selected_country == '全国籍':
