@@ -18,7 +18,7 @@ df = df.rename(columns={'外国人人口': '外国人'})
 df['比率'] = round(df['外国人'] / df['総人口'] * 100, 1)
 
 # タブ切り替え
-st.title('外国人数 統計データ')
+st.title('在留外国人ダッシュボード')
 tab1, tab2 = st.tabs(['全国', '都道府県別'])
 
 with tab1:
