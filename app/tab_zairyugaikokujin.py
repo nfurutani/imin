@@ -150,12 +150,15 @@ def render(data_dir, key_prefix='tab1'):
         )
         fig1.update_traces(mode='lines+markers')
         fig1.update_layout(
-            xaxis_tickangle=-45, hovermode='x unified', height=450,
+            xaxis=dict(tickangle=-45, fixedrange=True),
+            yaxis=dict(fixedrange=True),
+            hovermode='x unified', height=450,
             margin=dict(l=40, r=20, t=50, b=30),
             template='plotly_white',
             legend=dict(orientation='h', yanchor='bottom', y=1.08, xanchor='center', x=0.5),
+            dragmode=False,
         )
-        st.plotly_chart(fig1, use_container_width=True, config={'displayModeBar': False}, key=f'{key_prefix}_chart1')
+        st.plotly_chart(fig1, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False}, key=f'{key_prefix}_chart1')
     st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
 
     # --- チャート2: 在留資格グループ別推移 ---
@@ -199,10 +202,13 @@ def render(data_dir, key_prefix='tab1'):
         )
         fig_bar2.update_layout(
             barmode='stack',
-            xaxis_tickangle=-45, hovermode='x unified', height=450,
+            xaxis=dict(tickangle=-45, fixedrange=True),
+            yaxis=dict(fixedrange=True),
+            hovermode='x unified', height=450,
             margin=dict(l=40, r=20, t=50, b=30),
             template='plotly_white',
             legend=dict(orientation='h', yanchor='bottom', y=1.08, xanchor='center', x=0.5),
+            dragmode=False,
         )
-        st.plotly_chart(fig_bar2, use_container_width=True, config={'displayModeBar': False}, key=f'{key_prefix}_chart2')
+        st.plotly_chart(fig_bar2, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False}, key=f'{key_prefix}_chart2')
     st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
