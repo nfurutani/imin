@@ -25,7 +25,7 @@ with tab1:
     tab_jinkosuikei.render(DATA_DIR)
 
 with tab2:
-    tab_jinkosuikei.render_pref(df)
+    tab_jinkosuikei.render_pref(df, DATA_DIR)
 
 with tab3:
     st.markdown('##### 関連ニュース')
