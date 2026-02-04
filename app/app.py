@@ -19,10 +19,21 @@ df['比率'] = round(df['外国人'] / df['総人口'] * 100, 1)
 
 # タブ切り替え
 st.title('在留外国人統計')
-tab1, tab2 = st.tabs(['全国', '都道府県別'])
+tab1, tab2, tab3 = st.tabs(['全国', '都道府県別', 'ニュース'])
 
 with tab1:
     tab_jinkosuikei.render(DATA_DIR)
 
 with tab2:
     tab_jinkosuikei.render_pref(df)
+
+with tab3:
+    st.markdown('##### 関連ニュース')
+    news = [
+        ('2025/07/30', '時事通信', '外国人比率、40年に10％超も　鈴木法相、近く推計公表',
+         'https://www.jiji.com/jc/article?k=2025073001185&g=pol'),
+        ('2025/10/26', '日本経済新聞', '想定ペースの2倍で増える外国人　なぜ円安下でも日本を目指すのか',
+         'https://www.nikkei.com/article/DGXZQOUB21AQC0R21C25A0000000/'),
+    ]
+    for date, source, title, url in news:
+        st.markdown(f'- **{date}**　[{title}]({url})（{source}）')
