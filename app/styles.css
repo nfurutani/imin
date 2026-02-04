@@ -113,6 +113,11 @@
     hr {
         margin: 0.3rem 0 !important;
     }
+
+    /* Plotlyホバー無効化 */
+    .js-plotly-plot .hoverlayer {
+        display: none !important;
+    }
 }
 
 /* モバイル横向き */
