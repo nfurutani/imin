@@ -71,10 +71,7 @@ def render(data_dir, df):
     }).background_gradient(
         subset=['総人口', '外国人', '比率'],
         cmap='Purples'
-    ).set_properties(**{'text-align': 'center'}).set_table_styles([
-        {'selector': 'th', 'props': [('text-align', 'center')]},
-        {'selector': 'td', 'props': [('text-align', 'center')]}
-    ]).hide(axis='index')
+    )
 
-    st.markdown(f'<div class="custom-table">{styled.to_html()}</div>', unsafe_allow_html=True)
+    st.dataframe(styled, use_container_width=True, hide_index=True)
     st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 総務省 住民基本台帳に基づく人口（2025年1月）</p>', unsafe_allow_html=True)
