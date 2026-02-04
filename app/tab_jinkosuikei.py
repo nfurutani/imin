@@ -62,10 +62,11 @@ def render(data_dir):
 
 def render_pref(df, data_dir):
     """都道府県別タブ: 市区町村別外国人比率テーブル + 国籍別人口パイチャート"""
+    st.markdown('##### 都道府県別 / 市区町村別')
     pref_list = df[df['level'] == 'level1']['都道府県'].tolist()
     selected_pref = st.selectbox('都道府県を選択', ['全国'] + pref_list, label_visibility='collapsed', key='tab_pref_select')
 
-    st.markdown('##### 市区町村別外国人比率')
+    st.markdown('###### 市区町村別外国人比率')
 
     if selected_pref == '全国':
         df_display = df[df['level'] == 'level1'].sort_values('比率', ascending=False)
@@ -90,8 +91,7 @@ def render_pref(df, data_dir):
     st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 総務省 住民基本台帳に基づく人口（2025年1月）</p>', unsafe_allow_html=True)
 
     # 国籍別人口パイチャート
-    st.divider()
-    st.markdown('##### 国籍別人口（2025年6月）')
+    st.markdown('###### 国籍別人口構成（2025年6月）')
     df_zairyu_pref = pd.read_csv(data_dir / 'zairyu_pref.csv')
 
     if selected_pref == '全国':
