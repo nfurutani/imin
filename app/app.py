@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 from pathlib import Path
-import tab_gaikokujin
-import tab_zairyu
+import tab_jinkosuikei
+import tab_zairyugaikokujin
 
 st.set_page_config(page_title='外国人比率')
 
@@ -29,7 +29,7 @@ else:
 
 if tab1 is not None:
     with tab1:
-        tab_zairyu.render(DATA_DIR)
+        tab_zairyugaikokujin.render(DATA_DIR)
 
 with tab3:
-    tab_gaikokujin.render(DATA_DIR, df)
+    tab_jinkosuikei.render(DATA_DIR, df)
