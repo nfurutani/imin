@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 import tab_jinkosuikei
-import tab_zairyugaikokujin
 
 st.set_page_config(page_title='外国人比率')
 
@@ -19,17 +18,11 @@ df = df.rename(columns={'外国人人口': '外国人'})
 df['比率'] = round(df['外国人'] / df['総人口'] * 100, 1)
 
 # タブ切り替え
-st.title('外国人関係統計データ')
-dev_mode = st.query_params.get('dev') == '1'
-if dev_mode:
-    tab3, tab1 = st.tabs(['外国人比率', '国籍・在留資格'])
-else:
-    tab3 = st.container()
-    tab1 = None
+st.title('外国人数 統計データ')
+tab1, tab2 = st.tabs(['全国', '都道府県別'])
 
-if tab1 is not None:
-    with tab1:
-        tab_zairyugaikokujin.render(DATA_DIR)
+with tab1:
+    tab_jinkosuikei.render(DATA_DIR)
 
-with tab3:
-    tab_jinkosuikei.render(DATA_DIR, df)
+with tab2:
+    tab_jinkosuikei.render_pref(df)

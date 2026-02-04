@@ -74,13 +74,14 @@ df_overall = pd.concat([
     df3
 ], axis=0) # axis=0 は省略可能（縦方向の結合）
 
+df_overall = df_overall[~df_overall['集計時点'].isin(['2006年12月','2007年12月','2008年12月','2009年12月','2010年12月','2011年12月'])]
 df_overall = df_overall[df_overall['人口']!='-']
 df_overall['人口'] = df_overall['人口'].astype(float)
 
 df_overall = df_overall.reset_index(drop=True)
 
 print(df_overall.head())
-df_overall.to_csv(DATA_DIR / 'zairyu_country.csv', index=False)
+df_overall.to_csv(BASE_DIR / 'data' / 'zairyu_country.csv', index=False)
 
 ################################
 # 在留外国人の推移

@@ -13,6 +13,13 @@
     overflow-y: auto;
     overflow-x: auto;
     margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #edf0f5;
+    scrollbar-width: none;
+}
+
+.custom-table::-webkit-scrollbar {
+    display: none;
 }
 
 .custom-table table {
@@ -22,16 +29,24 @@
 
 .custom-table th, .custom-table td {
     padding: 6px 8px;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #edf0f5;
     white-space: nowrap;
     font-size: 14px;
+    text-align: center;
+    color: #31333f;
 }
 
 .custom-table th {
     position: sticky;
     top: 0;
-    background: #f0f2f6;
-    font-weight: 500;
+    background: #fafafa;
+    font-weight: 400;
+    color: #8d9099;
+    border-bottom: 1px solid #edf0f5;
+}
+
+.custom-table td:nth-child(1), .custom-table td:nth-child(2) {
+    color: #8d9099;
 }
 
 /* Bootstrapスタイルのタブ */

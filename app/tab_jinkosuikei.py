@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import tab_zairyugaikokujin
 
-def render(data_dir, df):
+def render(data_dir):
     df_jinko = pd.read_csv(data_dir / 'jinkosuikei.csv')
 
-    st.markdown('##### 外国人比率推移')
+    st.markdown('##### 外国人数・比率推移（全国）')
     df_jinko['外国人人口（万人）'] = df_jinko['外国人人口'] / 10
 
     fig = go.Figure()
@@ -53,10 +54,15 @@ def render(data_dir, df):
 
     st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 総務省統計局 人口推計</p>', unsafe_allow_html=True)
 
-    # 市区町村別外国人比率テーブル
+    # 在留外国人（フィルタ＋2チャート）
+    tab_zairyugaikokujin.render(data_dir, key_prefix='zenkoku')
+
+
+def render_pref(df):
+    """都道府県別タブ: 市区町村別外国人比率テーブル"""
     st.markdown('##### 市区町村別外国人比率')
     pref_list = df[df['level'] == 'level1']['都道府県'].tolist()
-    selected_pref = st.selectbox('都道府県を選択', ['全国'] + pref_list, label_visibility='collapsed', key='tab3_pref')
+    selected_pref = st.selectbox('都道府県を選択', ['全国'] + pref_list, label_visibility='collapsed', key='tab_pref_select')
 
     if selected_pref == '全国':
         df_display = df[df['level'] == 'level1'].sort_values('比率', ascending=False)
@@ -74,7 +80,8 @@ def render(data_dir, df):
     }).background_gradient(
         subset=['総人口', '外国人', '比率'],
         cmap='Purples'
-    )
+    ).hide(axis='index')
 
-    st.dataframe(styled, use_container_width=True, hide_index=True)
+    html = f'<div class="custom-table">{styled.to_html()}</div>'
+    st.markdown(html, unsafe_allow_html=True)
     st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 総務省 住民基本台帳に基づく人口（2025年1月）</p>', unsafe_allow_html=True)
