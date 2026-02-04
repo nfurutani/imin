@@ -42,8 +42,11 @@ def render(data_dir, df):
                     range=[0, 4], dtick=1, automargin=False),
         legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5),
         margin=dict(l=30, r=30, t=30, b=30), height=320,
+        dragmode=False,
     )
-    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    st.plotly_chart(fig, use_container_width=True, config={
+        'displayModeBar': False, 'scrollZoom': False,
+    })
 
     st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 総務省統計局 人口推計</p>', unsafe_allow_html=True)
 
