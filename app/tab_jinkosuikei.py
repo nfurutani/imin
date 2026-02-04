@@ -59,7 +59,7 @@ def render(data_dir, df):
     selected_pref = st.selectbox('都道府県を選択', ['全国'] + pref_list, label_visibility='collapsed', key='tab3_pref')
 
     if selected_pref == '全国':
-        df_display = df[df['level'] == 'level1'].sort_values('都道府県番号')
+        df_display = df[df['level'] == 'level1'].sort_values('比率', ascending=False)
     else:
         df_display = df[(df['都道府県'] == selected_pref) & (df['level'] == 'level3')]
         df_display = df_display.sort_values('比率', ascending=False)
