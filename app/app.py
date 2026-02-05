@@ -29,7 +29,7 @@ with tab2:
 
 with tab3:
     # tab_jinkosuikei.render_country(DATA_DIR)
-    tab_jinkosuikei.render_pref(DATA_DIR)
+    tab_jinkosuikei.render(DATA_DIR)
 
 with tab4:
     tab_jinkosuikei.render_status(DATA_DIR)
