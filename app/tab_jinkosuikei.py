@@ -89,8 +89,8 @@ def render_pref(df, data_dir):
     st.markdown(html, unsafe_allow_html=True)
     st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 総務省 住民基本台帳に基づく人口（2025年1月）</p>', unsafe_allow_html=True)
 
-    # 国籍別人口推移テーブル
-    st.markdown('###### 国籍別人口推移')
+    # 国籍別人口（前年比）テーブル
+    st.markdown('###### 国籍別人口（前年比）')
     df_country_long = pd.read_csv(data_dir / 'zairyu_pref_country.csv')
     pref_filter = '総数' if selected_pref == '全国' else selected_pref
     df_country_chart = df_country_long[df_country_long['都道府県'] == pref_filter].copy()
@@ -123,10 +123,10 @@ def render_pref(df, data_dir):
 
     html_country_table = f'<div class="custom-table">{styled_country_table.to_html()}</div>'
     st.markdown(html_country_table, unsafe_allow_html=True)
-    st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計（2025年6月）</p>', unsafe_allow_html=True)
 
-    # 在留資格別人口推移テーブル
-    st.markdown('###### 在留資格別人口推移')
+    # 在留資格別人口（前年比）テーブル
+    st.markdown('###### 在留資格別人口（前年比）')
     df_status_long = pd.read_csv(data_dir / 'zairyu_pref_status.csv')
     df_status_chart = df_status_long[df_status_long['都道府県'] == pref_filter].copy()
 
@@ -158,11 +158,11 @@ def render_pref(df, data_dir):
 
     html_status_table = f'<div class="custom-table">{styled_status_table.to_html()}</div>'
     st.markdown(html_status_table, unsafe_allow_html=True)
-    st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計（2025年6月）</p>', unsafe_allow_html=True)
 
-    # 国籍別・都道府県別人口推移テーブル
+    # 国籍別・都道府県別人口（前年比）テーブル
     st.divider()
-    st.markdown('##### 国籍別・都道府県別人口推移')
+    st.markdown('##### 国籍別・都道府県別人口（前年比）')
     country_list = df_country_long['国籍'].unique().tolist()
     country_list = ['総数'] + [c for c in country_list if c != '総数']
     selected_country = st.selectbox('国籍を選択', country_list, label_visibility='collapsed', key='pref_country_filter')
@@ -197,11 +197,11 @@ def render_pref(df, data_dir):
 
     html_country_pref = f'<div class="custom-table">{styled_country_pref.to_html()}</div>'
     st.markdown(html_country_pref, unsafe_allow_html=True)
-    st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計（2025年6月）</p>', unsafe_allow_html=True)
 
-    # 在留資格別・都道府県別人口推移テーブル
+    # 在留資格別・都道府県別人口（前年比）テーブル
     st.divider()
-    st.markdown('##### 在留資格別・都道府県別人口推移')
+    st.markdown('##### 在留資格別・都道府県別人口（前年比）')
     status_list = df_status_long['在留資格'].unique().tolist()
     status_list = ['総数'] + [s for s in status_list if s != '総数']
     selected_status = st.selectbox('在留資格を選択', status_list, label_visibility='collapsed', key='pref_status_filter')
@@ -236,4 +236,4 @@ def render_pref(df, data_dir):
 
     html_status_pref = f'<div class="custom-table">{styled_status_pref.to_html()}</div>'
     st.markdown(html_status_pref, unsafe_allow_html=True)
-    st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計（2025年6月）</p>', unsafe_allow_html=True)
