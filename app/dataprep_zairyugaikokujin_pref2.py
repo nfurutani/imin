@@ -18,8 +18,8 @@ df_202506_status = df_202506_status.drop(df_202506_status.columns[0], axis=1)
 df_202506_status.columns = ['都道府県','総数','中長期在留者','永住者','技術・人文知識・国際業務','技能実習','留学','特定技能','家族滞在','定住者','日本人の配偶者等','特定活動','その他','特別永住者']
 df_202506_status = df_202506_status.drop(columns='中長期在留者')
 
-# print(df_202506_country.head())
-# print(df_202506_status.head())
+print(df_202506_country.columns)
+print(df_202506_status.columns)
 
 ###############################################
 # 202406のデータ

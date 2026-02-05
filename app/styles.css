@@ -49,32 +49,6 @@
     color: #8d9099;
 }
 
-/* Bootstrapスタイルのタブ */
-[data-testid="stTabs"] [role="tablist"] {
-    border-bottom: 1px solid #dee2e6 !important;
-    gap: 0 !important;
-}
-
-[data-testid="stTabs"] button {
-    color: #007bff !important;
-    background: transparent !important;
-    border: 1px solid transparent !important;
-    border-radius: 0.25rem 0.25rem 0 0 !important;
-    padding: 0.5rem 1rem !important;
-    margin-bottom: -1px !important;
-}
-
-[data-testid="stTabs"] button:hover {
-    border-color: #e9ecef #e9ecef #dee2e6 !important;
-}
-
-[data-testid="stTabs"] button[aria-selected="true"] {
-    color: #495057 !important;
-    font-weight: 500 !important;
-    background: #fff !important;
-    border-color: #dee2e6 #dee2e6 #fff !important;
-}
-
 /* モバイル（幅600px以下） */
 @media (max-width: 600px) {
     /* 上部の余白を削減 */
@@ -93,6 +67,13 @@
     /* セレクトボックスの余白削減 */
     [data-testid="stSelectbox"] {
         margin-bottom: 0.5rem !important;
+    }
+
+    /* Pill風ボタン - モバイル用 */
+    [data-testid="stButton"] button {
+        padding: 0.15rem 0.5rem !important;
+        font-size: 12px !important;
+        min-height: 28px !important;
     }
 
     /* テーブルの高さとフォント */
@@ -149,3 +130,5 @@
         margin: 0.2rem 0 !important;
     }
 }
+
+

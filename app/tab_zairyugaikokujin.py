@@ -80,20 +80,21 @@ def render(data_dir, key_prefix='tab1'):
     # --- フィルタ ---
     st.divider()
     st.markdown('##### 地域・国籍別 / 在留資格別')
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        selected_region = st.selectbox('地域', ['全地域'] + REGIONS, label_visibility='collapsed', key=f'{key_prefix}_region')
-    with col2:
-        # 地域に応じた国籍リスト
-        df_total_tmp = df_zairyu[df_zairyu['在留資格'] == '総数']
-        country_names = _get_country_names(df_total_tmp, selected_region, latest_date)
-        if country_names:
-            selected_country = st.selectbox('国籍', ['全国籍'] + country_names, label_visibility='collapsed', key=f'{key_prefix}_country')
-        else:
-            selected_country = '全国籍'
-            st.selectbox('国籍', ['全国籍'], label_visibility='collapsed', key=f'{key_prefix}_country', disabled=True)
-    with col3:
-        selected_visa = st.selectbox('在留資格', VISA_GROUPS, label_visibility='collapsed', key=f'{key_prefix}_visa')
+    with st.expander('フィルター', expanded=False):
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            selected_region = st.selectbox('地域', ['全地域'] + REGIONS, key=f'{key_prefix}_region')
+        with col2:
+            # 地域に応じた国籍リスト
+            df_total_tmp = df_zairyu[df_zairyu['在留資格'] == '総数']
+            country_names = _get_country_names(df_total_tmp, selected_region, latest_date)
+            if country_names:
+                selected_country = st.selectbox('国籍', ['全国籍'] + country_names, key=f'{key_prefix}_country')
+            else:
+                selected_country = '全国籍'
+                st.selectbox('国籍（地域を選択すると有効）', ['全国籍'], key=f'{key_prefix}_country', disabled=True)
+        with col3:
+            selected_visa = st.selectbox('在留資格', VISA_GROUPS, key=f'{key_prefix}_visa')
 
     # --- チャート1: 国籍・地域別推移 ---
     df_filtered = _filter_by_visa(df_zairyu, selected_visa)
