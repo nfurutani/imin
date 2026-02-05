@@ -119,9 +119,9 @@ def render_pref(df, data_dir):
         hole=0.5, color_discrete_sequence=pastel_colors,
     )
     fig_pie.update_layout(
-        margin=dict(l=20, r=20, t=30, b=20),
-        height=500,
-        legend=dict(orientation='h', yanchor='bottom', y=-0.2, xanchor='center', x=0.5),
+        margin=dict(l=0, r=0, t=10, b=10),
+        height=450,
+        showlegend=False,
         annotations=[dict(
             text=f'{total_pop:,}<br>人',
             x=0.5, y=0.5, font_size=32, showarrow=False
