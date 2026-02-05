@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 import tab_zairyugaikokujin
 
 def render(data_dir):
@@ -90,80 +89,151 @@ def render_pref(df, data_dir):
     st.markdown(html, unsafe_allow_html=True)
     st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 総務省 住民基本台帳に基づく人口（2025年1月）</p>', unsafe_allow_html=True)
 
-    # 国籍別人口パイチャート
-    st.markdown('###### 国籍別人口構成（2025年6月）')
-    df_zairyu_pref = pd.read_csv(data_dir / 'zairyu_pref.csv')
+    # 国籍別人口推移テーブル
+    st.markdown('###### 国籍別人口推移')
+    df_country_long = pd.read_csv(data_dir / 'zairyu_pref_country.csv')
+    pref_filter = '総数' if selected_pref == '全国' else selected_pref
+    df_country_chart = df_country_long[df_country_long['都道府県'] == pref_filter].copy()
 
-    if selected_pref == '全国':
-        df_pie = df_zairyu_pref.groupby('国籍', as_index=False)['人口_2025'].sum()
-    else:
-        df_pie = df_zairyu_pref[df_zairyu_pref['都道府県'] == selected_pref].copy()
+    # ピボットして2024/06と2025/06を横に並べる
+    df_country_pivot = df_country_chart.pivot(index='国籍', columns='時点', values='人口').reset_index()
+    df_country_pivot['増減数'] = df_country_pivot['2025/06'] - df_country_pivot['2024/06']
+    df_country_pivot['増減率'] = (df_country_pivot['増減数'] / df_country_pivot['2024/06'] * 100).round(1)
+    df_country_pivot = df_country_pivot.rename(columns={'2025/06': '人口（2025）'})
+    df_country_pivot = df_country_pivot[['国籍', '人口（2025）', '増減数', '増減率']]
 
-    # 上位10カ国 + その他
-    df_pie = df_pie.sort_values('人口_2025', ascending=False)
-    top10 = df_pie.head(10)
-    others = df_pie.iloc[10:]
-    if len(others) > 0:
-        others_row = pd.DataFrame({'国籍': ['その他'], '人口_2025': [others['人口_2025'].sum()]})
-        df_pie = pd.concat([top10, others_row], ignore_index=True)
-    else:
-        df_pie = top10
+    # 総数を抽出してテーブル外に表示
+    total_row = df_country_pivot[df_country_pivot['国籍'] == '総数'].iloc[0]
+    total_pop = int(total_row['人口（2025）'])
+    total_change = int(total_row['増減数'])
+    total_rate = total_row['増減率']
+    st.markdown(f'<p style="font-size:14px; margin-bottom:5px;"><b>総数:</b> {total_pop:,}人（{total_change:+,}, {total_rate:+.1f}%）</p>', unsafe_allow_html=True)
 
-    total_pop = int(df_pie['人口_2025'].sum())
-    pastel_colors = [
-        '#A8D8EA', '#AA96DA', '#FCBAD3', '#FFFFD2', '#B5EAD7',
-        '#FFB7B2', '#E2F0CB', '#C7CEEA', '#FFDAC1', '#F0E6EF', '#D4E4ED'
-    ]
-    fig_pie = px.pie(
-        df_pie, values='人口_2025', names='国籍',
-        hole=0.5, color_discrete_sequence=pastel_colors,
-    )
-    fig_pie.update_layout(
-        margin=dict(l=0, r=0, t=10, b=10),
-        height=450,
-        showlegend=False,
-        annotations=[dict(
-            text=f'{total_pop:,}<br>人',
-            x=0.5, y=0.5, font_size=32, showarrow=False
-        )],
-    )
-    fig_pie.update_traces(textposition='inside', textinfo='percent+label+value')
-    st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
-    st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
+    # 総数を除外して増減数降順でソート
+    df_country_pivot = df_country_pivot[df_country_pivot['国籍'] != '総数'].sort_values('増減数', ascending=False).reset_index(drop=True)
 
-    # 国籍別・都道府県別人口テーブル
-    st.divider()
-    st.markdown('##### 国籍別・都道府県別人口（2025年6月）')
-    region_list = ['全地域'] + df_zairyu_pref['地域'].dropna().unique().tolist()
-    col1, col2 = st.columns(2)
-    with col1:
-        selected_region_filter = st.selectbox('地域', region_list, label_visibility='collapsed', key='tab_pref_region')
-
-    if selected_region_filter == '全地域':
-        df_filtered = df_zairyu_pref
-    else:
-        df_filtered = df_zairyu_pref[df_zairyu_pref['地域'] == selected_region_filter]
-    country_list = ['全国籍'] + sorted(df_filtered['国籍'].unique().tolist())
-
-    with col2:
-        selected_country = st.selectbox('国籍', country_list, label_visibility='collapsed', key='tab_pref_country')
-
-    if selected_country == '全国籍':
-        df_country = df_filtered.groupby('都道府県', as_index=False)['人口_2025'].sum()
-    else:
-        df_country = df_filtered[df_filtered['国籍'] == selected_country].copy()
-        df_country = df_country[['都道府県', '人口_2025']]
-    df_country = df_country.sort_values('人口_2025', ascending=False)
-    df_country = df_country.rename(columns={'人口_2025': '人口'})
-    df_country = df_country.reset_index(drop=True)
-
-    styled_country = df_country.style.format({
-        '人口': '{:,.0f}'
+    styled_country_table = df_country_pivot.style.format({
+        '人口（2025）': '{:,.0f}',
+        '増減数': '{:+,.0f}',
+        '増減率': '{:+.1f}%'
     }).background_gradient(
-        subset=['人口'],
+        subset=['人口（2025）', '増減数', '増減率'],
         cmap='Blues'
     ).hide(axis='index')
 
-    html_country = f'<div class="custom-table">{styled_country.to_html()}</div>'
-    st.markdown(html_country, unsafe_allow_html=True)
+    html_country_table = f'<div class="custom-table">{styled_country_table.to_html()}</div>'
+    st.markdown(html_country_table, unsafe_allow_html=True)
+    st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
+
+    # 在留資格別人口推移テーブル
+    st.markdown('###### 在留資格別人口推移')
+    df_status_long = pd.read_csv(data_dir / 'zairyu_pref_status.csv')
+    df_status_chart = df_status_long[df_status_long['都道府県'] == pref_filter].copy()
+
+    # ピボットして2024/06と2025/06を横に並べる
+    df_status_pivot = df_status_chart.pivot(index='在留資格', columns='時点', values='人口').reset_index()
+    df_status_pivot['増減数'] = df_status_pivot['2025/06'] - df_status_pivot['2024/06']
+    df_status_pivot['増減率'] = (df_status_pivot['増減数'] / df_status_pivot['2024/06'] * 100).round(1)
+    df_status_pivot = df_status_pivot.rename(columns={'2025/06': '人口（2025）'})
+    df_status_pivot = df_status_pivot[['在留資格', '人口（2025）', '増減数', '増減率']]
+
+    # 総数を抽出してテーブル外に表示
+    total_status_row = df_status_pivot[df_status_pivot['在留資格'] == '総数'].iloc[0]
+    total_status_pop = int(total_status_row['人口（2025）'])
+    total_status_change = int(total_status_row['増減数'])
+    total_status_rate = total_status_row['増減率']
+    st.markdown(f'<p style="font-size:14px; margin-bottom:5px;"><b>総数:</b> {total_status_pop:,}人（{total_status_change:+,}, {total_status_rate:+.1f}%）</p>', unsafe_allow_html=True)
+
+    # 総数を除外して増減数降順でソート
+    df_status_pivot = df_status_pivot[df_status_pivot['在留資格'] != '総数'].sort_values('増減数', ascending=False).reset_index(drop=True)
+
+    styled_status_table = df_status_pivot.style.format({
+        '人口（2025）': '{:,.0f}',
+        '増減数': '{:+,.0f}',
+        '増減率': '{:+.1f}%'
+    }).background_gradient(
+        subset=['人口（2025）', '増減数', '増減率'],
+        cmap='BuGn'
+    ).hide(axis='index')
+
+    html_status_table = f'<div class="custom-table">{styled_status_table.to_html()}</div>'
+    st.markdown(html_status_table, unsafe_allow_html=True)
+    st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
+
+    # 国籍別・都道府県別人口推移テーブル
+    st.divider()
+    st.markdown('##### 国籍別・都道府県別人口推移')
+    country_list = df_country_long['国籍'].unique().tolist()
+    country_list = ['総数'] + [c for c in country_list if c != '総数']
+    selected_country = st.selectbox('国籍を選択', country_list, label_visibility='collapsed', key='pref_country_filter')
+
+    df_country_by_pref = df_country_long[df_country_long['国籍'] == selected_country].copy()
+    df_country_by_pref = df_country_by_pref[~df_country_by_pref['都道府県'].str.contains('※', na=False)]
+    df_country_by_pref = df_country_by_pref.groupby(['都道府県', '時点'], as_index=False)['人口'].sum()
+    df_country_pref_pivot = df_country_by_pref.pivot(index='都道府県', columns='時点', values='人口').reset_index()
+    df_country_pref_pivot['増減数'] = df_country_pref_pivot['2025/06'] - df_country_pref_pivot['2024/06']
+    df_country_pref_pivot['増減率'] = (df_country_pref_pivot['増減数'] / df_country_pref_pivot['2024/06'] * 100).round(1)
+    df_country_pref_pivot = df_country_pref_pivot.rename(columns={'2025/06': '人口（2025）'})
+    df_country_pref_pivot = df_country_pref_pivot[['都道府県', '人口（2025）', '増減数', '増減率']]
+
+    # 総数を抽出してテーブル外に表示
+    total_pref_row = df_country_pref_pivot[df_country_pref_pivot['都道府県'] == '総数'].iloc[0]
+    total_pref_pop = int(total_pref_row['人口（2025）'])
+    total_pref_change = int(total_pref_row['増減数'])
+    total_pref_rate = total_pref_row['増減率']
+    st.markdown(f'<p style="font-size:14px; margin-bottom:5px;"><b>総数:</b> {total_pref_pop:,}人（{total_pref_change:+,}, {total_pref_rate:+.1f}%）</p>', unsafe_allow_html=True)
+
+    # 総数を除外して増減数降順でソート
+    df_country_pref_pivot = df_country_pref_pivot[df_country_pref_pivot['都道府県'] != '総数'].sort_values('増減数', ascending=False).reset_index(drop=True)
+
+    styled_country_pref = df_country_pref_pivot.style.format({
+        '人口（2025）': '{:,.0f}',
+        '増減数': '{:+,.0f}',
+        '増減率': '{:+.1f}%'
+    }).background_gradient(
+        subset=['人口（2025）', '増減数', '増減率'],
+        cmap='Blues'
+    ).hide(axis='index')
+
+    html_country_pref = f'<div class="custom-table">{styled_country_pref.to_html()}</div>'
+    st.markdown(html_country_pref, unsafe_allow_html=True)
+    st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
+
+    # 在留資格別・都道府県別人口推移テーブル
+    st.divider()
+    st.markdown('##### 在留資格別・都道府県別人口推移')
+    status_list = df_status_long['在留資格'].unique().tolist()
+    status_list = ['総数'] + [s for s in status_list if s != '総数']
+    selected_status = st.selectbox('在留資格を選択', status_list, label_visibility='collapsed', key='pref_status_filter')
+
+    df_status_by_pref = df_status_long[df_status_long['在留資格'] == selected_status].copy()
+    df_status_by_pref = df_status_by_pref[~df_status_by_pref['都道府県'].str.contains('※', na=False)]
+    df_status_by_pref = df_status_by_pref.groupby(['都道府県', '時点'], as_index=False)['人口'].sum()
+    df_status_pref_pivot = df_status_by_pref.pivot(index='都道府県', columns='時点', values='人口').reset_index()
+    df_status_pref_pivot['増減数'] = df_status_pref_pivot['2025/06'] - df_status_pref_pivot['2024/06']
+    df_status_pref_pivot['増減率'] = (df_status_pref_pivot['増減数'] / df_status_pref_pivot['2024/06'] * 100).round(1)
+    df_status_pref_pivot = df_status_pref_pivot.rename(columns={'2025/06': '人口（2025）'})
+    df_status_pref_pivot = df_status_pref_pivot[['都道府県', '人口（2025）', '増減数', '増減率']]
+
+    # 総数を抽出してテーブル外に表示
+    total_status_pref_row = df_status_pref_pivot[df_status_pref_pivot['都道府県'] == '総数'].iloc[0]
+    total_status_pref_pop = int(total_status_pref_row['人口（2025）'])
+    total_status_pref_change = int(total_status_pref_row['増減数'])
+    total_status_pref_rate = total_status_pref_row['増減率']
+    st.markdown(f'<p style="font-size:14px; margin-bottom:5px;"><b>総数:</b> {total_status_pref_pop:,}人（{total_status_pref_change:+,}, {total_status_pref_rate:+.1f}%）</p>', unsafe_allow_html=True)
+
+    # 総数を除外して増減数降順でソート
+    df_status_pref_pivot = df_status_pref_pivot[df_status_pref_pivot['都道府県'] != '総数'].sort_values('増減数', ascending=False).reset_index(drop=True)
+
+    styled_status_pref = df_status_pref_pivot.style.format({
+        '人口（2025）': '{:,.0f}',
+        '増減数': '{:+,.0f}',
+        '増減率': '{:+.1f}%'
+    }).background_gradient(
+        subset=['人口（2025）', '増減数', '増減率'],
+        cmap='BuGn'
+    ).hide(axis='index')
+
+    html_status_pref = f'<div class="custom-table">{styled_status_pref.to_html()}</div>'
+    st.markdown(html_status_pref, unsafe_allow_html=True)
     st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
