@@ -70,8 +70,8 @@ df3=df3.groupby(['tab_code', '表章項目', 'cat01_code', '在留資格', 'cat0
 ################################
 # 結合したいデータフレームを一つのリスト [ ] にまとめます
 df_overall = pd.concat([
-    # df[(df['集計時点'].str.contains('12月|2025年6月'))],
-    df[(df['集計時点'].str.contains('6月'))],
+    df[(df['集計時点'].str.contains('12月|2025年6月'))],
+    # df[(df['集計時点'].str.contains('6月'))],
     df3
 ], axis=0) # axis=0 は省略可能（縦方向の結合）
 

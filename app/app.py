@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 from pathlib import Path
 import tab_jinkosuikei
 
@@ -13,25 +12,21 @@ st.markdown(f'<style>{css_path.read_text()}</style>', unsafe_allow_html=True)
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / 'data'
 
-df = pd.read_csv(DATA_DIR / 'daicho_city.csv')
-df = df.rename(columns={'外国人人口': '外国人'})
-df['比率'] = round(df['外国人'] / df['総人口'] * 100, 1)
-
 # タブ切り替え
 st.title('在留外国人統計')
-tab1, tab2, tab3, tab4, tab5 = st.tabs(['全国', '都道府県別', '国籍別', '在留資格別', 'ニュース'])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(['都道府県別', '国籍別', '在留資格別', '特定技能・技能実習', 'ニュース'])
 
 with tab1:
-    tab_jinkosuikei.render(DATA_DIR)
+    tab_jinkosuikei.render_pref(DATA_DIR)
 
 with tab2:
-    tab_jinkosuikei.render_pref(df, DATA_DIR)
-
-with tab3:
     tab_jinkosuikei.render_country(DATA_DIR)
 
-with tab4:
+with tab3:
     tab_jinkosuikei.render_status(DATA_DIR)
+
+with tab4:
+    tab_jinkosuikei.render_tokutei(DATA_DIR)
 
 with tab5:
     st.markdown('##### 関連ニュース')

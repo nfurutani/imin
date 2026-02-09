@@ -23,7 +23,7 @@ CATEGORY_MAP = {
     '技術・人文知識・国際業務': '技術・人文知識・国際業務',
     '技術': '技術・人文知識・国際業務',
     '人文知識・国際業務': '技術・人文知識・国際業務',
-    '技能': 'その他', '経営・管理': 'その他', '投資・経営': 'その他',
+    '技能': 'その他', '経営・管理': '経営・管理', '投資・経営': '経営・管理',
     '高度専門職１号イ': 'その他', '高度専門職１号ロ': 'その他',
     '高度専門職１号ハ': 'その他', '高度専門職２号': 'その他',
     '教育': 'その他', '教授': 'その他', '宗教': 'その他', '医療': 'その他',
@@ -67,7 +67,15 @@ def _filter_by_visa(df, selected_visa):
     return df[df['在留資格'].isin(visa_keys)].copy()
 
 
-def render(data_dir, key_prefix='tab1'):
+def render(data_dir, key_prefix='tab1', ext_country=None, ext_visa=None, show_filter=True, country_mode=False, show_table=True, title_label=None):
+    """
+    ext_country: 外部から国籍フィルターを指定（例: '中国', 'ベトナム'）
+    ext_visa: 外部から在留資格フィルターを指定（例: '技能実習', '留学'）
+    show_filter: フィルターUIを表示するかどうか
+    country_mode: Trueの場合、地域別ではなく国籍別の推移を表示
+    show_table: 外国人数・比率推移テーブルを表示するかどうか
+    title_label: チャートタイトルに表示するラベル（例: '中国', '技能実習'）
+    """
     df_zairyu = pd.read_csv(data_dir / 'zairyu_country.csv')
     if df_zairyu['人口'].dtype == 'object':
         df_zairyu['人口'] = df_zairyu['人口'].str.replace(',', '').astype(float)
@@ -78,23 +86,30 @@ def render(data_dir, key_prefix='tab1'):
     latest_date = df_zairyu[df_zairyu['_sort_key'] == latest_sort_key]['集計時点'].iloc[0]
 
     # --- フィルタ ---
-    st.divider()
-    st.markdown('##### 地域・国籍別 / 在留資格別')
-    with st.expander('フィルター', expanded=False):
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            selected_region = st.selectbox('地域', ['全地域'] + REGIONS, key=f'{key_prefix}_region')
-        with col2:
-            # 地域に応じた国籍リスト
-            df_total_tmp = df_zairyu[df_zairyu['在留資格'] == '総数']
-            country_names = _get_country_names(df_total_tmp, selected_region, latest_date)
-            if country_names:
-                selected_country = st.selectbox('国籍', ['全国籍'] + country_names, key=f'{key_prefix}_country')
-            else:
-                selected_country = '全国籍'
-                st.selectbox('国籍（地域を選択すると有効）', ['全国籍'], key=f'{key_prefix}_country', disabled=True)
-        with col3:
-            selected_visa = st.selectbox('在留資格', VISA_GROUPS, key=f'{key_prefix}_visa')
+    if show_filter:
+        # 内部フィルター表示（全国タブ用）
+        st.divider()
+        st.markdown('##### 地域・国籍別 / 在留資格別')
+        with st.expander('フィルター', expanded=False):
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                selected_region = st.selectbox('地域', ['全地域'] + REGIONS, key=f'{key_prefix}_region')
+            with col2:
+                # 地域に応じた国籍リスト
+                df_total_tmp = df_zairyu[df_zairyu['在留資格'] == '総数']
+                country_names = _get_country_names(df_total_tmp, selected_region, latest_date)
+                if country_names:
+                    selected_country = st.selectbox('国籍', ['全国籍'] + country_names, key=f'{key_prefix}_country')
+                else:
+                    selected_country = '全国籍'
+                    st.selectbox('国籍（地域を選択すると有効）', ['全国籍'], key=f'{key_prefix}_country', disabled=True)
+            with col3:
+                selected_visa = st.selectbox('在留資格', VISA_GROUPS, key=f'{key_prefix}_visa')
+    else:
+        # 外部フィルター使用（国籍別/在留資格別タブ用）
+        selected_region = '全地域'
+        selected_country = ext_country if ext_country else '全国籍'
+        selected_visa = ext_visa if ext_visa else '全在留資格'
 
     # --- チャート1: 国籍・地域別推移 ---
     df_filtered = _filter_by_visa(df_zairyu, selected_visa)
@@ -104,22 +119,40 @@ def render(data_dir, key_prefix='tab1'):
             ['集計時点', '国籍・地域', 'cat02_code', '_sort_key'], as_index=False
         )['人口'].sum()
 
-    visa_label = f'（{selected_visa}）' if selected_visa != '全在留資格' else ''
+    # title_labelがある場合はそれを使用、なければフィルタ値から生成
+    if title_label:
+        chart_title_suffix = f'（{title_label}）'
+    else:
+        chart_title_suffix = ''
 
     if selected_country != '全国籍':
-        st.markdown(f'###### {selected_country} 在留外国人の推移{visa_label}')
+        st.markdown(f'###### 国籍別 在留外国人の推移{chart_title_suffix}')
         df_chart_data = df_filtered[df_filtered['国籍・地域'] == selected_country].copy()
         color_col = '国籍・地域'
+    elif country_mode:
+        # 国籍別モード: 上位国籍を表示
+        st.markdown(f'###### 国籍別 在留外国人の推移{chart_title_suffix}')
+        df_chart_data = df_filtered[~df_filtered['国籍・地域'].isin(REGIONS + ['総数', '無国籍'])].copy()
+        # 上位8カ国 + その他
+        top_countries = (
+            df_chart_data[df_chart_data['集計時点'] == latest_date]
+            .sort_values('人口', ascending=False).head(9)['国籍・地域'].tolist()
+        )
+        df_chart_data['国籍・地域'] = df_chart_data['国籍・地域'].apply(
+            lambda x: x if x in top_countries else 'その他'
+        )
+        df_chart_data = df_chart_data.groupby(['集計時点', '国籍・地域', '_sort_key'], as_index=False)['人口'].sum()
+        color_col = '国籍・地域'
     elif selected_region == '全地域':
-        st.markdown(f'###### 地域別 在留外国人の推移{visa_label}')
+        st.markdown(f'###### 地域別 在留外国人の推移{chart_title_suffix}')
         df_chart_data = df_filtered[df_filtered['国籍・地域'].isin(REGIONS)].copy()
         color_col = '国籍・地域'
     elif selected_region == '無国籍':
-        st.markdown('###### 無国籍 在留外国人の推移')
+        st.markdown(f'###### 無国籍 在留外国人の推移{chart_title_suffix}')
         df_chart_data = df_filtered[df_filtered['国籍・地域'] == '無国籍'].copy()
         color_col = '国籍・地域'
     else:
-        st.markdown(f'###### {selected_region} 国籍別 在留外国人の推移{visa_label}')
+        st.markdown(f'###### {selected_region} 国籍別 在留外国人の推移{chart_title_suffix}')
         lo, hi = REGION_CODE_RANGE[selected_region]
         names = df_filtered[
             (df_filtered['集計時点'] == latest_date) & (df_filtered['cat02_code'] >= lo) & (df_filtered['cat02_code'] <= hi)
@@ -163,25 +196,19 @@ def render(data_dir, key_prefix='tab1'):
     st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
 
     # --- チャート2: 在留資格グループ別推移 ---
-    filter_label = ''
     if selected_country != '全国籍':
         df_visa = df_zairyu[df_zairyu['国籍・地域'] == selected_country].copy()
-        filter_label = f'（{selected_country}）'
     elif selected_region != '全地域' and selected_region != '無国籍':
         lo, hi = REGION_CODE_RANGE[selected_region]
         df_visa = df_zairyu[
             (df_zairyu['cat02_code'] >= lo) & (df_zairyu['cat02_code'] <= hi)
         ].copy()
-        filter_label = f'（{selected_region}）'
     elif selected_region == '無国籍':
         df_visa = df_zairyu[df_zairyu['国籍・地域'] == '無国籍'].copy()
-        filter_label = '（無国籍）'
     else:
         df_visa = df_zairyu[df_zairyu['国籍・地域'] == '総数'].copy()
 
-    if selected_visa != '全在留資格':
-        filter_label += f'（{selected_visa}）' if filter_label else f'（{selected_visa}）'
-    st.markdown(f'###### 在留資格グループ別の推移{filter_label}')
+    st.markdown(f'###### 資格別 在留外国人の推移{chart_title_suffix}')
     df_visa = df_visa[df_visa['在留資格'].isin(CATEGORY_MAP.keys())]
     df_visa['在留資格グループ'] = df_visa['在留資格'].map(CATEGORY_MAP)
     if selected_visa != '全在留資格':
@@ -215,46 +242,47 @@ def render(data_dir, key_prefix='tab1'):
     st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
 
     # --- テーブル: 外国人数・比率推移 ---
-    st.markdown(f'###### 外国人数・比率推移テーブル{filter_label}')
+    if show_table:
+        st.markdown(f'###### 外国人数・比率推移テーブル{chart_title_suffix}')
 
-    # フィルタに応じたデータ取得
-    if selected_country != '全国籍':
-        df_table = df_zairyu[df_zairyu['国籍・地域'] == selected_country].copy()
-    elif selected_region != '全地域' and selected_region != '無国籍':
-        lo, hi = REGION_CODE_RANGE[selected_region]
-        df_table = df_zairyu[(df_zairyu['cat02_code'] >= lo) & (df_zairyu['cat02_code'] <= hi)].copy()
-    elif selected_region == '無国籍':
-        df_table = df_zairyu[df_zairyu['国籍・地域'] == '無国籍'].copy()
-    else:
-        df_table = df_zairyu[df_zairyu['国籍・地域'] == '総数'].copy()
+        # フィルタに応じたデータ取得
+        if selected_country != '全国籍':
+            df_table = df_zairyu[df_zairyu['国籍・地域'] == selected_country].copy()
+        elif selected_region != '全地域' and selected_region != '無国籍':
+            lo, hi = REGION_CODE_RANGE[selected_region]
+            df_table = df_zairyu[(df_zairyu['cat02_code'] >= lo) & (df_zairyu['cat02_code'] <= hi)].copy()
+        elif selected_region == '無国籍':
+            df_table = df_zairyu[df_zairyu['国籍・地域'] == '無国籍'].copy()
+        else:
+            df_table = df_zairyu[df_zairyu['国籍・地域'] == '総数'].copy()
 
-    # 在留資格フィルタ
-    if selected_visa == '全在留資格':
-        df_table = df_table[df_table['在留資格'] == '総数']
-    else:
-        visa_keys = [k for k, v in CATEGORY_MAP.items() if v == selected_visa]
-        df_table = df_table[df_table['在留資格'].isin(visa_keys)]
+        # 在留資格フィルタ
+        if selected_visa == '全在留資格':
+            df_table = df_table[df_table['在留資格'] == '総数']
+        else:
+            visa_keys = [k for k, v in CATEGORY_MAP.items() if v == selected_visa]
+            df_table = df_table[df_table['在留資格'].isin(visa_keys)]
 
-    # 集計時点ごとに合算
-    df_table = df_table.groupby(['集計時点', '_sort_key'], as_index=False)['人口'].sum()
-    df_table = df_table.sort_values('_sort_key')
+        # 集計時点ごとに合算
+        df_table = df_table.groupby(['集計時点', '_sort_key'], as_index=False)['人口'].sum()
+        df_table = df_table.sort_values('_sort_key')
 
-    # 増減数・増減率計算
-    df_table['増減数'] = df_table['人口'].diff()
-    df_table['増減率'] = (df_table['増減数'] / df_table['人口'].shift(1) * 100).round(1)
-    df_table = df_table[['集計時点', '人口', '増減数', '増減率']].rename(columns={'集計時点': '時点'})
+        # 増減数・増減率計算
+        df_table['増減数'] = df_table['人口'].diff()
+        df_table['増減率'] = (df_table['増減数'] / df_table['人口'].shift(1) * 100).round(1)
+        df_table = df_table[['集計時点', '人口', '増減数', '増減率']]
 
-    # 最新を上に
-    df_table = df_table.iloc[::-1].reset_index(drop=True)
+        # 最新を上に
+        df_table = df_table.iloc[::-1].reset_index(drop=True)
 
-    styled_table = df_table.style.format({
-        '人口': '{:,.0f}',
-        '増減数': lambda x: f'{x:+,.0f}' if pd.notna(x) else '-',
-        '増減率': lambda x: f'{x:+.1f}%' if pd.notna(x) else '-'
-    }).background_gradient(
-        subset=['人口'],
-        cmap='Blues'
-    ).hide(axis='index')
+        styled_table = df_table.style.format({
+            '人口': '{:,.0f}',
+            '増減数': lambda x: f'{x:+,.0f}' if pd.notna(x) else '-',
+            '増減率': lambda x: f'{x:+.1f}%' if pd.notna(x) else '-'
+        }).background_gradient(
+            subset=['人口'],
+            cmap='Blues'
+        ).hide(axis='index')
 
-    st.markdown(f'<div class="custom-table">{styled_table.to_html()}</div>', unsafe_allow_html=True)
-    st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
+        st.markdown(f'<div class="custom-table">{styled_table.to_html()}</div>', unsafe_allow_html=True)
+        st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 出入国在留管理庁 在留外国人統計</p>', unsafe_allow_html=True)
