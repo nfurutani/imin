@@ -1,6 +1,7 @@
 import streamlit as st
 from pathlib import Path
 import tab_jinkosuikei
+import datetime
 
 st.set_page_config(page_title='外国人比率')
 
@@ -31,6 +32,8 @@ with tab4:
 with tab5:
     st.markdown('##### 関連ニュース')
     news = [
+        ( datetime.date.today(), '出入国在留管理庁', '特定技能に関する二国間の協力覚書',
+         'https://www.jiji.com/jc/article?k=2025073001185&g=pol'),
         ('2025/07/30', '時事通信', '外国人比率、40年に10％超も　鈴木法相、近く推計公表',
          'https://www.jiji.com/jc/article?k=2025073001185&g=pol'),
         ('2025/10/26', '日本経済新聞', '想定ペースの2倍で増える外国人　なぜ円安下でも日本を目指すのか',

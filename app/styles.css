@@ -9,7 +9,7 @@
 
 /* カスタムテーブル */
 .custom-table {
-    max-height: 90vh;
+    max-height: 70vh;
     overflow-y: auto;
     overflow-x: auto;
     margin-bottom: 1rem;
@@ -78,7 +78,7 @@
 
     /* テーブルの高さとフォント */
     .custom-table {
-        max-height: 90vh !important;
+        max-height: 70vh !important;
     }
 
     .custom-table th, .custom-table td {
@@ -118,7 +118,7 @@
     }
 
     .custom-table {
-        max-height: 90vh !important;
+        max-height: 70vh !important;
         min-height: 150px !important;
     }
 
