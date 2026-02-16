@@ -12,7 +12,7 @@ DATA_DIR = BASE_DIR / 'data'
 
 st.title('太陽光発電')
 
-tab1, tab2 = st.tabs(['都道府県別', '地図'])
+tab1, tab2, tab3 = st.tabs(['都道府県別', '事業者別', '地図'])
 
 with tab1:
     df = pd.read_parquet(DATA_DIR / 'solar_pref_trend.parquet')
@@ -155,6 +155,143 @@ with tab1:
     st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 資源エネルギー庁 電力調査統計</p>', unsafe_allow_html=True)
 
 with tab2:
+    df_op = pd.read_parquet(DATA_DIR / 'solar_operator_trend.parquet')
+
+    def to_label_op(s):
+        parts = s.split('.')
+        return f'{parts[0]}年{parts[1]}月'
+
+    def sort_key_op(s):
+        parts = s.split('.')
+        return int(parts[0]) * 100 + int(parts[1])
+
+    df_op['ラベル'] = df_op['時点'].apply(to_label_op)
+    df_op['_sort'] = df_op['時点'].apply(sort_key_op)
+    df_op = df_op.sort_values('_sort')
+    label_order_op = df_op.drop_duplicates('ラベル')['ラベル'].tolist()
+
+    # 事業者フィルター（最新時点の発電所数上位）
+    latest_op = df_op['_sort'].max()
+    # 各指標の上位20社をユニオン
+    prev_op_sort = df_op[df_op['_sort'] < latest_op]['_sort'].max()
+    df_lat_filt = df_op[df_op['_sort'] == latest_op].copy()
+    df_prev_filt = df_op[df_op['_sort'] == prev_op_sort].set_index('事業者名')
+    df_lat_filt['発電所（前回）'] = df_lat_filt['事業者名'].map(df_prev_filt['太陽光発電所数']).fillna(0)
+    df_lat_filt['最大出力（前回）'] = df_lat_filt['事業者名'].map(df_prev_filt['太陽光最大出力kW']).fillna(0)
+    df_lat_filt['発電所増減率'] = ((df_lat_filt['太陽光発電所数'] / df_lat_filt['発電所（前回）'].replace(0, float('nan')) - 1) * 100)
+    df_lat_filt['最大出力増減率'] = ((df_lat_filt['太陽光最大出力kW'] / df_lat_filt['最大出力（前回）'].replace(0, float('nan')) - 1) * 100)
+    top_ops = set()
+    top_ops.update(df_lat_filt.nlargest(20, '太陽光発電所数')['事業者名'])
+    top_ops.update(df_lat_filt.nlargest(20, '発電所増減率')['事業者名'])
+    top_ops.update(df_lat_filt.nlargest(20, '太陽光最大出力kW')['事業者名'])
+    top_ops.update(df_lat_filt.nlargest(20, '最大出力増減率')['事業者名'])
+    # 発電所数降順でソート
+    top_operators = df_lat_filt[df_lat_filt['事業者名'].isin(top_ops)].sort_values('太陽光発電所数', ascending=False)['事業者名'].tolist()
+    op_list = ['全事業者合計'] + top_operators
+    selected_op = st.selectbox('事業者を選択', op_list, label_visibility='collapsed', key='op_select')
+
+    if selected_op == '全事業者合計':
+        df_op_chart = df_op.groupby(['ラベル', '_sort'], as_index=False).agg(
+            太陽光発電所数=('太陽光発電所数', 'sum'),
+            太陽光最大出力kW=('太陽光最大出力kW', 'sum'),
+        )
+    else:
+        df_op_chart = df_op[df_op['事業者名'] == selected_op].copy()
+
+    df_op_chart = df_op_chart.sort_values('_sort')
+    df_op_chart['最大出力MW'] = df_op_chart['太陽光最大出力kW'] / 1000
+
+    fig_op = go.Figure()
+    fig_op.add_trace(go.Bar(
+        x=df_op_chart['ラベル'], y=df_op_chart['太陽光発電所数'],
+        name='発電所数',
+        marker_color='#636EFA',
+        yaxis='y',
+        text=df_op_chart['太陽光発電所数'].apply(lambda x: f'{x:,.0f}'),
+        textposition='inside',
+        insidetextanchor='middle',
+        textfont=dict(size=10),
+    ))
+    fig_op.add_trace(go.Scatter(
+        x=df_op_chart['ラベル'], y=df_op_chart['最大出力MW'],
+        name='最大出力 (MW)',
+        mode='lines+markers+text',
+        line=dict(color='#FFA15A', width=2),
+        marker=dict(size=8),
+        yaxis='y2',
+        text=df_op_chart['最大出力MW'].apply(lambda x: f'{x:,.0f}'),
+        textposition='top center',
+        textfont=dict(size=10),
+    ))
+    fig_op.update_layout(
+        xaxis=dict(categoryorder='array', categoryarray=label_order_op, fixedrange=True),
+        yaxis=dict(title='発電所数', fixedrange=True, showgrid=False),
+        yaxis2=dict(title='最大出力 (MW)', overlaying='y', side='right', fixedrange=True, showgrid=False),
+        hovermode='x unified',
+        height=450,
+        margin=dict(l=40, r=40, t=50, b=30),
+        template='plotly_white',
+        legend=dict(orientation='h', yanchor='bottom', y=1.08, xanchor='center', x=0.5),
+        dragmode=False,
+    )
+    st.plotly_chart(fig_op, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+
+    # テーブル: 事業者別 発電所数・最大出力（最新 vs 前回）
+    prev_op = df_op[df_op['_sort'] < latest_op]['_sort'].max()
+    df_lat_op = df_op[df_op['_sort'] == latest_op].set_index('事業者名')
+    df_prev_op = df_op[df_op['_sort'] == prev_op].set_index('事業者名')
+
+    all_ops = df_lat_op.index.tolist()
+    df_op_table = pd.DataFrame({
+        '事業者名': all_ops,
+        '発電所': [df_lat_op.loc[o, '太陽光発電所数'] for o in all_ops],
+        '発電所（前回）': [df_prev_op.loc[o, '太陽光発電所数'] if o in df_prev_op.index else 0 for o in all_ops],
+        '最大出力計': [df_lat_op.loc[o, '太陽光最大出力kW'] / 1000 for o in all_ops],
+        '最大出力計（前回）': [df_prev_op.loc[o, '太陽光最大出力kW'] / 1000 if o in df_prev_op.index else 0 for o in all_ops],
+    })
+    df_op_table['発電所増減率'] = ((df_op_table['発電所'] / df_op_table['発電所（前回）'].replace(0, float('nan')) - 1) * 100).round(1)
+    df_op_table['最大出力増減率'] = ((df_op_table['最大出力計'] / df_op_table['最大出力計（前回）'].replace(0, float('nan')) - 1) * 100).round(1)
+    df_op_table = df_op_table[['事業者名', '発電所', '発電所増減率', '最大出力計', '最大出力増減率']]
+
+    latest_label_op = to_label_op(df_op[df_op['_sort'] == latest_op]['時点'].iloc[0])
+    prev_label_op = to_label_op(df_op[df_op['_sort'] == prev_op]['時点'].iloc[0])
+    st.markdown(f'###### 事業者別（{latest_label_op} / 前回: {prev_label_op}）')
+
+    sort_options_op = ['件数', '件数増減', '出力', '出力増減']
+    selected_sort_op = st.segmented_control('ソート順', sort_options_op, default='件数',
+                                             label_visibility='collapsed', key='op_sort_seg')
+    if selected_sort_op is None:
+        selected_sort_op = '件数'
+    sort_col_map_op = {'件数': '発電所', '件数増減': '発電所増減率', '出力': '最大出力計', '出力増減': '最大出力増減率'}
+    df_op_table = df_op_table.sort_values(sort_col_map_op[selected_sort_op], ascending=False).reset_index(drop=True)
+
+    styled_op = df_op_table.style.format({
+        '発電所': '{:,.0f}',
+        '発電所増減率': '{:+.1f}%',
+        '最大出力計': '{:,.1f}',
+        '最大出力増減率': '{:+.1f}%',
+    }).background_gradient(
+        subset=['発電所', '最大出力計'],
+        cmap='OrRd',
+    ).background_gradient(
+        subset=['発電所増減率', '最大出力増減率'],
+        cmap='OrRd',
+    ).hide(axis='index')
+
+    table_html_op = styled_op.to_html()
+    table_html_op = (table_html_op
+        .replace('発電所増減率', 'HATUDEN_ZOUGEN')
+        .replace('最大出力増減率', 'SHUTSURYOKU_ZOUGEN')
+        .replace('最大出力計', '最大出力<br>(MW)')
+        .replace('>発電所<', '>発電所<br>(件数)<')
+        .replace('HATUDEN_ZOUGEN', '発電所<br>(増減率)')
+        .replace('SHUTSURYOKU_ZOUGEN', '最大出力<br>(増減率)')
+    )
+    html_table_op = f'<div class="custom-table">{table_html_op}</div>'
+    st.markdown(html_table_op, unsafe_allow_html=True)
+    st.markdown('<p style="font-size:12px; color:gray; margin-top:-10px;">Source: 資源エネルギー庁 電力調査統計</p>', unsafe_allow_html=True)
+
+with tab3:
     import folium
     from folium.plugins import FastMarkerCluster
     from streamlit_folium import st_folium
