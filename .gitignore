@@ -60,6 +60,6 @@ htmlcov/
 .coverage.*
 
 # Large raw data files
-data/solar_nintei.parquet
+# data/solar_nintei.parquet
 data/solar_shozaichi.parquet
 data/solar_city_map.parquet
