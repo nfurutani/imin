@@ -36,6 +36,12 @@
     color: #31333f;
 }
 
+.custom-table td:first-child {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .custom-table th {
     position: sticky;
     top: 0;
@@ -84,6 +90,10 @@
     .custom-table th, .custom-table td {
         font-size: 12px !important;
         padding: 4px 6px !important;
+    }
+
+    .custom-table td:first-child {
+        max-width: 120px !important;
     }
 
     /* フッター */

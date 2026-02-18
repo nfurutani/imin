@@ -16,7 +16,7 @@ DATA_DIR = BASE_DIR / 'data'
 
 # タブ切り替え
 st.title('在留外国人')
-tab1, tab2, tab3, tab4, tab5 = st.tabs(['都道府県別', '国籍別', '在留資格別', '特定技能・技能実習', 'ニュース'])
+tab1, tab2, tab3, tab4 = st.tabs(['都道府県別', '国籍別', '在留資格別', 'ニュース'])
 
 with tab1:
     tab_pref.render(DATA_DIR)
@@ -27,10 +27,10 @@ with tab2:
 with tab3:
     tab_status.render(DATA_DIR)
 
-with tab4:
-    tab_tokutei.render(DATA_DIR)
+# with tab_tokutei:
+#     tab_tokutei.render(DATA_DIR)
 
-with tab5:
+with tab4:
     st.markdown('##### 関連ニュース')
     news = [
         ( datetime.date.today(), '出入国在留管理庁', '特定技能に関する二国間の協力覚書',

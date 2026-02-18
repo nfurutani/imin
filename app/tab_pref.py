@@ -79,12 +79,17 @@ def render(data_dir):
         display_cols = ['市区町村', '総人口', '外国人', '比率', '前年比']
 
     # ソート指標切り替え
-    sort_options = ['総人口', '外国人', '比率', '前年比']
-    selected_sort = st.segmented_control('ソート順', sort_options, default='比率',
+    sort_options = ['デフォルト', '総人口', '外国人', '比率', '前年比']
+    selected_sort = st.segmented_control('ソート順', sort_options, default='デフォルト',
                                           label_visibility='collapsed', key='pref_table_sort_seg')
     if selected_sort is None:
-        selected_sort = '比率'
-    df_display = df_display.sort_values(selected_sort, ascending=False)
+        selected_sort = 'デフォルト'
+    if selected_sort == 'デフォルト':
+        if selected_pref == '全国':
+            pref_order_map = {p: i for i, p in enumerate(pref_list)}
+            df_display = df_display.sort_values('都道府県', key=lambda s: s.map(pref_order_map))
+    else:
+        df_display = df_display.sort_values(selected_sort, ascending=False)
 
     df_styled = df_display[display_cols].reset_index(drop=True)
 

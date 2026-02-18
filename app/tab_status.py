@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import tab_zairyugaikokujin
-from constants import STATUS_ORDER
+from constants import STATUS_ORDER, PREF_ORDER
 
 
 def render(data_dir):
@@ -49,13 +49,17 @@ def render(data_dir):
     df_status_pref_pivot = df_status_pref_pivot[df_status_pref_pivot['都道府県'] != '総数'].copy()
 
     # ソート指標切り替え
-    status_sort_metric_list = ['人口', '増減数', '増減率']
-    selected_status_sort_metric = st.segmented_control('ソート順', status_sort_metric_list, default='人口',
+    status_sort_metric_list = ['デフォルト', '人口', '増減数', '増減率']
+    selected_status_sort_metric = st.segmented_control('ソート順', status_sort_metric_list, default='デフォルト',
                                                          label_visibility='collapsed', key='status_pref_sort_seg')
     if selected_status_sort_metric is None:
-        selected_status_sort_metric = '人口'
-    status_sort_col = '人口（2025）' if selected_status_sort_metric == '人口' else selected_status_sort_metric
-    df_status_pref_pivot = df_status_pref_pivot.sort_values(status_sort_col, ascending=False).reset_index(drop=True)
+        selected_status_sort_metric = 'デフォルト'
+    if selected_status_sort_metric == 'デフォルト':
+        pref_order_map = {p: i for i, p in enumerate(PREF_ORDER)}
+        df_status_pref_pivot = df_status_pref_pivot.sort_values('都道府県', key=lambda s: s.map(pref_order_map)).reset_index(drop=True)
+    else:
+        status_sort_col = '人口（2025）' if selected_status_sort_metric == '人口' else selected_status_sort_metric
+        df_status_pref_pivot = df_status_pref_pivot.sort_values(status_sort_col, ascending=False).reset_index(drop=True)
 
     styled_status_pref = df_status_pref_pivot.style.format({
         '人口（2025）': '{:,.0f}',
