@@ -8,6 +8,7 @@ from pathlib import Path
 import folium
 from streamlit_folium import st_folium
 import branca.colormap as cm
+import plotly.graph_objects as go
 
 # CSS読み込み
 css_path = Path(__file__).parent / 'styles.css'
@@ -84,6 +85,11 @@ def load_mega_solar():
             return pd.NaT
 
     df['_調達終了'] = df['調達期間終了年月'].apply(parse_end_ym)
+
+    # 新規認定日（Excelシリアル値 → 年）
+    origin = pd.Timestamp('1899-12-30')
+    df['認定年'] = (origin + pd.to_timedelta(df['新規認定日'], unit='D')).dt.year
+
     return df
 
 
@@ -92,6 +98,12 @@ today = pd.Timestamp.today().normalize()
 
 st.title('メガソーラー')
 st.caption('太陽電池の合計出力 ≥ 1MW（1,000kW）の太陽光発電設備')
+st.info(
+    '**FIT（固定価格買取制度）とは** — 再エネ発電事業者が電力会社に一定価格で電力を売電できる制度。'
+    'その費用（再エネ賦課金）は電気料金に上乗せされ、全国の電力消費者が負担する。'
+    '2024年度の賦課金単価は **3.49円/kWh**、標準家庭の年間負担額は約 **1万円**。',
+    icon='ℹ️',
+)
 
 # 都道府県フィルター
 available_prefs = ['全国'] + [p for p in PREF_ORDER if p in df_nintei['都道府県'].unique()]
@@ -124,6 +136,41 @@ elif status_label.startswith('運転予定'):
     df_target = df_planned
 else:
     df_target = df_operating
+
+# === 年別認定推移グラフ ===
+title_suffix = selected_pref if selected_pref else '全国'
+df_trend_src = df_view  # ステータスフィルタ前の全件を使う
+trend = df_trend_src.groupby('認定年').agg(
+    件数=('設備ID', 'count'),
+    合計出力MW=('出力kW', lambda x: x.sum() / 1_000),
+).reset_index().sort_values('認定年')
+trend = trend[trend['認定年'] <= pd.Timestamp.today().year]
+trend['累計出力MW'] = trend['合計出力MW'].cumsum()
+
+st.markdown(f'###### 年別新規認定件数・出力の推移（{title_suffix}）')
+fig_trend = go.Figure()
+fig_trend.add_trace(go.Bar(
+    x=trend['認定年'], y=trend['件数'],
+    name='新規認定件数',
+    marker_color='#fc8d59',
+    yaxis='y1',
+))
+fig_trend.add_trace(go.Scatter(
+    x=trend['認定年'], y=trend['累計出力MW'].round(0),
+    name='累計出力（MW）', mode='lines+markers',
+    line=dict(color='#d73027', width=2),
+    yaxis='y2',
+))
+fig_trend.update_layout(
+    xaxis=dict(tickmode='linear', dtick=1, fixedrange=True, showgrid=False),
+    yaxis=dict(title='認定件数', fixedrange=True, tickformat=',', showgrid=False),
+    yaxis2=dict(title='累計出力（MW）', overlaying='y', side='right', fixedrange=True, tickformat=',', showgrid=False),
+    legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1),
+    margin=dict(l=10, r=10, t=30, b=10), height=260,
+    dragmode=False,
+)
+st.plotly_chart(fig_trend, use_container_width=True,
+                config={'displayModeBar': False, 'scrollZoom': False}, key='solar_trend')
 
 # コロプレス地図
 GEO_DIR = DATA_DIR / 'geo'
@@ -187,7 +234,7 @@ def render_choropleth(geojson_data, agg_data, key_col):
         val = value_map.get(name, 0)
         return {
             'fillColor': colormap(val / 1_000) if val > 0 else '#f0f0f0',
-            'color': '#999',
+            'color': '#fff',
             'weight': 0.5,
             'fillOpacity': 0.7,
         }
@@ -261,13 +308,12 @@ if selected_sort == '件数':
     agg = agg.sort_values('件数', ascending=False).reset_index(drop=True)
 elif selected_sort == '出力':
     agg = agg.sort_values('合計出力kW', ascending=False).reset_index(drop=True)
-
 disp = agg[[group_col, '件数', '合計出力MW']].copy()
-styled = disp.style.format({
-    '件数': '{:,.0f}',
-    '合計出力MW': '{:,.1f}',
-}).background_gradient(
-    subset=['件数', '合計出力MW'],
+format_cols = {'件数': '{:,.0f}', '合計出力MW': '{:,.1f}'}
+grad_cols = ['件数', '合計出力MW']
+
+styled = disp.style.format(format_cols).background_gradient(
+    subset=grad_cols,
     cmap='OrRd',
 ).hide(axis='index')
 html = styled.to_html().replace('合計出力MW', '合計出力<br>(MW)')
