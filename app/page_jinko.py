@@ -98,6 +98,28 @@ else:
     ).reset_index().sort_values('year')
     title_suffix = '全国'
 
+# === 積み上げ棒グラフ（日本人・外国人人口の実数推移）===
+st.markdown(f'###### 日本人・外国人人口の推移（{title_suffix}）')
+fig_stack = go.Figure()
+fig_stack.add_trace(go.Bar(
+    x=df_chart['year'], y=df_chart['日本人人口'],
+    name='日本人人口', marker_color='#d73027',
+))
+fig_stack.add_trace(go.Bar(
+    x=df_chart['year'], y=df_chart['外国人人口'],
+    name='外国人人口', marker_color='#4575b4',
+))
+fig_stack.update_layout(
+    barmode='stack',
+    xaxis=dict(tickmode='linear', dtick=1, fixedrange=True, showgrid=False),
+    yaxis=dict(title='人口（人）', fixedrange=True, tickformat=',', showgrid=False),
+    legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1),
+    margin=dict(l=10, r=10, t=30, b=10), height=280,
+    dragmode=False,
+)
+st.plotly_chart(fig_stack, use_container_width=True,
+                config={'displayModeBar': False, 'scrollZoom': False}, key='jinko_stack')
+
 df_chart['日本人前年比'] = df_chart['日本人人口'].diff()
 df_chart['外国人前年比'] = df_chart['外国人人口'].diff()
 df_chart = df_chart[df_chart['日本人前年比'].notna()].copy()
